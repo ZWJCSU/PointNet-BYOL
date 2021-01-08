@@ -1,0 +1,26 @@
+2020-12-28 16:01:48,625 - Model - INFO - PARAMETER ...
+2020-12-28 16:01:48,625 - Model - INFO - Namespace(batch_size=24, gpu='0', log_dir='pointnet2_part_seg_msg', normal=True, num_point=2048, num_votes=3)
+2020-12-28 16:01:48,662 - Model - INFO - The number of test data is: 2874
+2020-12-28 16:04:29,377 - Model - INFO - PARAMETER ...
+2020-12-28 16:04:29,377 - Model - INFO - Namespace(batch_size=24, gpu='0', log_dir='pointnet2_part_seg_msg', normal=True, num_point=2048, num_votes=3)
+2020-12-28 16:04:29,414 - Model - INFO - The number of test data is: 2874
+2020-12-28 16:07:25,368 - Model - INFO - eval mIoU of Airplane       0.817001
+2020-12-28 16:07:25,369 - Model - INFO - eval mIoU of Bag            0.799140
+2020-12-28 16:07:25,369 - Model - INFO - eval mIoU of Cap            0.732548
+2020-12-28 16:07:25,369 - Model - INFO - eval mIoU of Car            0.776522
+2020-12-28 16:07:25,369 - Model - INFO - eval mIoU of Chair          0.901558
+2020-12-28 16:07:25,369 - Model - INFO - eval mIoU of Earphone       0.757379
+2020-12-28 16:07:25,369 - Model - INFO - eval mIoU of Guitar         0.906005
+2020-12-28 16:07:25,369 - Model - INFO - eval mIoU of Knife          0.857322
+2020-12-28 16:07:25,369 - Model - INFO - eval mIoU of Lamp           0.844505
+2020-12-28 16:07:25,370 - Model - INFO - eval mIoU of Laptop         0.956762
+2020-12-28 16:07:25,370 - Model - INFO - eval mIoU of Motorbike      0.644316
+2020-12-28 16:07:25,370 - Model - INFO - eval mIoU of Mug            0.946456
+2020-12-28 16:07:25,370 - Model - INFO - eval mIoU of Pistol         0.794421
+2020-12-28 16:07:25,370 - Model - INFO - eval mIoU of Rocket         0.601202
+2020-12-28 16:07:25,370 - Model - INFO - eval mIoU of Skateboard     0.760359
+2020-12-28 16:07:25,370 - Model - INFO - eval mIoU of Table          0.822581
+2020-12-28 16:07:25,371 - Model - INFO - Accuracy is: 0.94009
+2020-12-28 16:07:25,371 - Model - INFO - Class avg accuracy is: 0.84518
+2020-12-28 16:07:25,371 - Model - INFO - Class avg mIOU is: 0.80738
+2020-12-28 16:07:25,371 - Model - INFO - Inctance avg mIOU is: 0.84604
