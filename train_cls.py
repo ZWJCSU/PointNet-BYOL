@@ -159,7 +159,7 @@ def main(args):
     
     
 
-    trainer.train_pointnet(trainDataLoader)
+    trainer.train_pointnet(trainDataLoader,testDataLoader)
 #    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=20, gamma=0.7)
 #    global_epoch = 0
 #    global_step = 0
