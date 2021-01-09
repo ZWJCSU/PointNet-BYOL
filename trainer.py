@@ -86,10 +86,20 @@ class BYOLTrainer:
                points[:,:, 0:3] = provider.shift_point_cloud(points[:,:, 0:3])
                points = torch.Tensor(points)
                target = target[:, 0]
-
                points = points.transpose(2, 1)
                points, target = points.cuda(), target.cuda()
-               loss = self.update(points, points)
+            
+               points1, target1 = data
+               points1 = points1.data.numpy()
+               points1 = provider.random_point_dropout(points1)
+               points1[:,:, 0:3] = provider.random_scale_point_cloud(points1[:,:, 0:3])
+               points1[:,:, 0:3] = provider.shift_point_cloud(points1[:,:, 0:3])
+               points1 = torch.Tensor(points1)
+               target1 = target1[:, 0]
+               points1 = points1.transpose(2, 1)
+               points1, target1 = points1.cuda(), target1.cuda()
+            
+               loss = self.update(points, points1)
                self.optimizer.zero_grad()
                loss.backward()
                self.optimizer.step()
