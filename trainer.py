@@ -20,7 +20,6 @@ import torch.nn.functional as F
 import torchvision
 from torch.utils.data.dataloader import DataLoader
 from torch.utils.tensorboard import SummaryWriter
-
 from utils import _create_model_training_folder
 
 
@@ -116,31 +115,31 @@ class BYOLTrainer:
               
 
 
-            with torch.no_grad():
-               instance_acc, class_acc = test(classifier.eval(), testDataLoader)
+#             with torch.no_grad():
+#                instance_acc, class_acc = test(classifier.eval(), testDataLoader)
 
-               if (instance_acc >= best_instance_acc):
-                   best_instance_acc = instance_acc
-                   best_epoch = epoch + 1
+#                if (instance_acc >= best_instance_acc):
+#                    best_instance_acc = instance_acc
+#                    best_epoch = epoch + 1
 
-               if (class_acc >= best_class_acc):
-                   best_class_acc = class_acc
-               log_string('Test Instance Accuracy: %f, Class Accuracy: %f'% (instance_acc, class_acc))
-               log_string('Best Instance Accuracy: %f, Class Accuracy: %f'% (best_instance_acc, best_class_acc))
+#                if (class_acc >= best_class_acc):
+#                    best_class_acc = class_acc
+#                log_string('Test Instance Accuracy: %f, Class Accuracy: %f'% (instance_acc, class_acc))
+#                log_string('Best Instance Accuracy: %f, Class Accuracy: %f'% (best_instance_acc, best_class_acc))
 
-               if (instance_acc >= best_instance_acc):
-                   logger.info('Save model...')
-                   savepath = str(checkpoints_dir) + '/best_model.pth'
-                   log_string('Saving at %s'% savepath)
-                   state = {
-                       'epoch': best_epoch,
-                       'instance_acc': instance_acc,
-                       'class_acc': class_acc,
-                       'model_state_dict': classifier.state_dict(),
-                       'optimizer_state_dict': optimizer.state_dict(),
-                   }
-                   torch.save(state, savepath)
-               global_epoch += 1
+#                if (instance_acc >= best_instance_acc):
+#                    logger.info('Save model...')
+#                    savepath = str(checkpoints_dir) + '/best_model.pth'
+#                    log_string('Saving at %s'% savepath)
+#                    state = {
+#                        'epoch': best_epoch,
+#                        'instance_acc': instance_acc,
+#                        'class_acc': class_acc,
+#                        'model_state_dict': classifier.state_dict(),
+#                        'optimizer_state_dict': optimizer.state_dict(),
+#                    }
+#                    torch.save(state, savepath)
+#                global_epoch += 1
 
 
 
