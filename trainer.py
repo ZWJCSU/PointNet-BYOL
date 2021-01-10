@@ -120,19 +120,16 @@ class BYOLTrainer:
                target1 = target1[:, 0]
                points1 = points1.transpose(2, 1)
                points1, target1 = points1.cuda(), target1.cuda()
-            
-<<<<<<< HEAD
                loss = self.update(points, points1,testDataLoader)
-=======
-               loss = self.update(points, points1)
->>>>>>> 17b1cc9c1f7d66f3f44c3090dc862b7e902c5b08
                self.optimizer.zero_grad()
                loss.backward()
                self.optimizer.step()
                self._update_target_network_parameters()
         
             instance_acc, class_acc = test(self.online_network.eval(), testDataLoader)
-            log_string('Test Instance Accuracy: %f, Class Accuracy: %f'% (instance_acc, class_acc))    
+            instance_acc1, class_acc1 = test(self.target_network.eval(), testDataLoader)
+            log_string('online_network Test Instance Accuracy: %f, online_network Class Accuracy: %f'% (instance_acc, class_acc))
+            log_string('target_network Test Instance Accuracy: %f, target_network Class Accuracy: %f'% (instance_acc1, class_acc1)) 
               #  classifier = classifier.train()
               #  pred, trans_feat = classifier(points)
               #  loss = criterion(pred, target.long(), trans_feat)
@@ -144,7 +141,6 @@ class BYOLTrainer:
               
 
 
-<<<<<<< HEAD
             # with torch.no_grad():
             #    instance_acc, class_acc = test(classifier.eval(), testDataLoader)
 
@@ -170,7 +166,7 @@ class BYOLTrainer:
             #        }
             #        torch.save(state, savepath)
             #    global_epoch += 1
-=======
+
 #             with torch.no_grad():
 #                instance_acc, class_acc = test(classifier.eval(), testDataLoader)
 
@@ -196,7 +192,7 @@ class BYOLTrainer:
 #                    }
 #                    torch.save(state, savepath)
 #                global_epoch += 1
->>>>>>> 17b1cc9c1f7d66f3f44c3090dc862b7e902c5b08
+
 
 
 
