@@ -9,7 +9,10 @@ class MLPHead(nn.Module):
             nn.Linear(in_channels, mlp_hidden_size),
             nn.BatchNorm1d(mlp_hidden_size),
             nn.ReLU(inplace=True),
-            nn.Linear(mlp_hidden_size, projection_size)
+            nn.Linear(mlp_hidden_size, projection_size),
+            nn.BatchNorm1d(projection_size),
+            nn.ReLU(inplace=True),
+            nn.Linear(mlp_hidden_size, 40)
         )
 
     def forward(self, x):
