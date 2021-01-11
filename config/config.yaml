@@ -14,7 +14,7 @@ trainer:
   batch_size: 32
   m: 0.996 # momentum update
   checkpoint_interval: 5000
-  max_epochs: 10
+  max_epochs: 20
   num_workers: 4
 
 optimizer:
