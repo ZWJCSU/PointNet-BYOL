@@ -21,7 +21,7 @@ class get_model(nn.Module):
         self.drop2 = nn.Dropout(0.5)
         self.fc3 = nn.Linear(256, 40)
         # self.encoder = torch.nn.Sequential(*list(self.children())[:-1])
-        self.projetion = MLPHead(in_channels=512,mlp_hidden_size=512, projection_size=40)
+        self.projetion = MLPHead(in_channels=256,mlp_hidden_size=512, projection_size=128)
 
     def forward(self, xyz):
         B, _, _ = xyz.shape
@@ -36,9 +36,9 @@ class get_model(nn.Module):
         x = l3_points.view(B, 1024)
         x = self.drop1(F.relu(self.bn1(self.fc1(x))))
         x = self.drop2(F.relu(self.bn2(self.fc2(x))))
-        x = self.fc3(x)
+#         x = self.fc3(x)
         x = F.log_softmax(x, -1)
-        return x,l3_points
+        return self.projetion(x),l3_points
 
 
 class get_loss(nn.Module):
