@@ -5,10 +5,7 @@
 
 
 ## The code I replace
-### Use pre-trained model of PointNet++
-![pre-trained model](img/pre-trained-model.png)
-### Change The MLP with pointet_cls.py
-![PointNet-model](img/MLP-head.png)
+
 
 ## Installation
 
