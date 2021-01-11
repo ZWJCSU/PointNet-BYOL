@@ -1,4 +1,5 @@
 from torch import nn
+import torch.nn.functional as F
 
 
 class MLPHead(nn.Module):
@@ -12,8 +13,11 @@ class MLPHead(nn.Module):
             nn.Linear(mlp_hidden_size, projection_size),
             nn.BatchNorm1d(projection_size),
             nn.ReLU(inplace=True),
-            nn.Linear(projection_size, 40)
+            
+            
         )
 
     def forward(self, x):
-        return self.net(x)
+        x=self.net(x)
+        x=F.log_softmax(x, -1)
+        return x
