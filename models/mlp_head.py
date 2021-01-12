@@ -10,13 +10,9 @@ class MLPHead(nn.Module):
             nn.Linear(in_channels, mlp_hidden_size),
             nn.BatchNorm1d(mlp_hidden_size),
             nn.ReLU(inplace=True),
-            nn.Linear(mlp_hidden_size, projection_size), 
-            nn.BatchNorm1d(mlp_hidden_size),
-            nn.ReLU(inplace=True),
-            nn.Linear(projection_size, 40), 
+            nn.Linear(mlp_hidden_size, projection_size)
+       
         )
 
     def forward(self, x):
-        x=self.net(x)
-        x=F.log_softmax(x, -1)
-        return x
+        return self.net(x)
