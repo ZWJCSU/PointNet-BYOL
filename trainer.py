@@ -234,11 +234,11 @@ class BYOLTrainer:
 
                 self._update_target_network_parameters()  # update the key encoder
                 niter += 1
-
+            # save checkpoints
+            self.save_model(os.path.join(model_checkpoints_folder, 'model.pth'))
             print("End of epoch {}".format(epoch_counter))
 
-        # save checkpoints
-        self.save_model(os.path.join(model_checkpoints_folder, 'model.pth'))
+        
 
         
         
