@@ -11,6 +11,9 @@ class MLPHead(nn.Module):
             nn.BatchNorm1d(mlp_hidden_size),
             nn.ReLU(inplace=True),
             nn.Linear(mlp_hidden_size, projection_size), 
+            nn.BatchNorm1d(mlp_hidden_size),
+            nn.ReLU(inplace=True),
+            nn.Linear(projection_size, 40), 
         )
 
     def forward(self, x):
