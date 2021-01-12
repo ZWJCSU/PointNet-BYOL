@@ -1,0 +1,14 @@
+from torch import nn
+import torch.nn.functional as F
+
+
+class MLPHead(nn.Module):
+    def __init__(self, in_channels,out_channels):
+        super(MLPHead, self).__init__()
+
+        self.net = nn.Sequential(
+            nn.Linear(in_channels, out_channels)    
+        )
+
+    def forward(self, x):
+        return self.net(x)
