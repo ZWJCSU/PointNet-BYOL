@@ -4,7 +4,7 @@ network:
   fine_tune_from: '../log/classification/pointnet2_cls_msg/checkpoints/'
   projection_head:
     mlp_hidden_size: 512
-    projection_size: 40
+    projection_size: 128
 
 data_transforms:
   s: 1
