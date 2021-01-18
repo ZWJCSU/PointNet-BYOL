@@ -25,7 +25,7 @@ from torch.utils.tensorboard import SummaryWriter
 from utils import _create_model_training_folder
 
 class LogisticRegression(torch.nn.Module):
-def __init__(self, input_dim, output_dim):
+   def __init__(self, input_dim, output_dim):
     super(LogisticRegression, self).__init__()
     self.linear = torch.nn.Linear(input_dim, output_dim)
     
