@@ -84,7 +84,7 @@ class ModelNetDataLoader(Dataset):
 
             if len(self.cache) < self.cache_size:
                 self.cache[index] = (point_set, cls)
-        print("cls",cls)
+#         print("cls",cls)
         return point_set, cls
 
     def __getitem__(self, index):
