@@ -19,6 +19,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torchvision
+import test_acc
 from torch.utils.data.dataloader import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 from utils import _create_model_training_folder
@@ -75,27 +76,27 @@ class BYOLTrainer:
         logger = logging.getLogger("Model")
         logger.setLevel(logging.INFO)
         
-        def test(model, loader, num_class=40):
-            mean_correct = []
-            class_acc = np.zeros((num_class,3))
-            for j, data in tqdm(enumerate(loader), total=len(loader)):
-                points, target = data
-                target = target[:, 0]
-                points = points.transpose(2, 1)
-                points, target = points.cuda(), target.cuda()
-                classifier = model.eval()
-                pred, _ = classifier(points)
-                pred_choice = pred.data.max(1)[1]
-                for cat in np.unique(target.cpu()):
-                    classacc = pred_choice[target==cat].eq(target[target==cat].long().data).cpu().sum()
-                    class_acc[cat,0]+= classacc.item()/float(points[target==cat].size()[0])
-                    class_acc[cat,1]+=1
-                correct = pred_choice.eq(target.long().data).cpu().sum()
-                mean_correct.append(correct.item()/float(points.size()[0]))
-            class_acc[:,2] =  class_acc[:,0]/ class_acc[:,1]
-            class_acc = np.mean(class_acc[:,2])
-            instance_acc = np.mean(mean_correct)
-            return instance_acc, class_acc
+#         def test(model, loader, num_class=40):
+#             mean_correct = []
+#             class_acc = np.zeros((num_class,3))
+#             for j, data in tqdm(enumerate(loader), total=len(loader)):
+#                 points, target = data
+#                 target = target[:, 0]
+#                 points = points.transpose(2, 1)
+#                 points, target = points.cuda(), target.cuda()
+#                 classifier = model.eval()
+#                 pred, _ = classifier(points)
+#                 pred_choice = pred.data.max(1)[1]
+#                 for cat in np.unique(target.cpu()):
+#                     classacc = pred_choice[target==cat].eq(target[target==cat].long().data).cpu().sum()
+#                     class_acc[cat,0]+= classacc.item()/float(points[target==cat].size()[0])
+#                     class_acc[cat,1]+=1
+#                 correct = pred_choice.eq(target.long().data).cpu().sum()
+#                 mean_correct.append(correct.item()/float(points.size()[0]))
+#             class_acc[:,2] =  class_acc[:,0]/ class_acc[:,1]
+#             class_acc = np.mean(class_acc[:,2])
+#             instance_acc = np.mean(mean_correct)
+#             return instance_acc, class_acc
 
         scheduler = torch.optim.lr_scheduler.StepLR(self.optimizer, step_size=20, gamma=0.7)
         global_epoch = 0
@@ -134,10 +135,7 @@ class BYOLTrainer:
                self.optimizer.step()
                self._update_target_network_parameters()
             torch.save(state, savepath)
-            instance_acc, class_acc = test(self.online_network.eval(), testDataLoader)
-            instance_acc1, class_acc1 = test(self.target_network.eval(), testDataLoader)
-            log_string('online_network Test Instance Accuracy: %f, online_network Class Accuracy: %f'% (instance_acc, class_acc))
-            log_string('target_network Test Instance Accuracy: %f, target_network Class Accuracy: %f'% (instance_acc1, class_acc1)) 
+            test_acc.get_acc()
               #  classifier = classifier.train()
               #  pred, trans_feat = classifier(points)
               #  loss = criterion(pred, target.long(), trans_feat)
