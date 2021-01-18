@@ -126,7 +126,7 @@ class BYOLTrainer:
                loss.backward()
                self.optimizer.step()
                self._update_target_network_parameters()
-        
+            torch.save(state, savepath)
             instance_acc, class_acc = test(self.online_network.eval(), testDataLoader)
             instance_acc1, class_acc1 = test(self.target_network.eval(), testDataLoader)
             log_string('online_network Test Instance Accuracy: %f, online_network Class Accuracy: %f'% (instance_acc, class_acc))
