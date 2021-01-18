@@ -20,6 +20,7 @@ from sklearn import preprocessing
 from torch.utils.data.dataloader import DataLoader
 from data_utils.ModelNetDataLoader import ModelNetDataLoader
 from models.resnet_base_network import ResNet18
+from models.pointnet2_cls_msg import get_model
 
 
 
@@ -83,19 +84,16 @@ def create_data_loaders_from_arrays(X_train, y_train, X_test, y_test):
 
 def get_acc():
  batch_size = 8
- data_transforms = torchvision.transforms.Compose([transforms.ToTensor()])
 
  config = yaml.load(open("/content/PointNet-BYOL/config/config.yaml", "r"), Loader=yaml.FullLoader)
 
- data_transform = get_simclr_data_transforms(**config['data_transforms'])
-
- TRAIN_DATASET = ModelNetDataLoader(root=DATA_PATH, npoint=1024, split='train',
+ TRAIN_DATASET = ModelNetDataLoader(root='data/modelnet40_normal_resampled/', npoint=1024, split='train',
                                                   normal_channel=False)
- TEST_DATASET = ModelNetDataLoader(root=DATA_PATH, npoint=1024, split='test',
+ TEST_DATASET = ModelNetDataLoader(root='data/modelnet40_normal_resampled/', npoint=1024, split='test',
                                                  normal_channel=False)
 
 
- print("Input shape:", len(train_dataset))
+ print("Input shape:", len(TRAIN_DATASET))
 
  train_loader = torch.utils.data.DataLoader(TRAIN_DATASET, batch_size=16, shuffle=True, num_workers=4)
  test_loader = torch.utils.data.DataLoader(TEST_DATASET, batch_size=16, shuffle=False, num_workers=4)
@@ -103,8 +101,8 @@ def get_acc():
  print(type(train_loader))
 
  device = 'cuda' if torch.cuda.is_available() else 'cpu' #'cuda' if torch.cuda.is_available() else 'cpu'
- encoder = ResNet18(**config['network'])
- output_feature_dim = encoder.projetion.net[0].in_features
+ encoder = get_model(num_class=40,normal_channel=True)
+#  output_feature_dim = encoder.projetion.net[0].in_features# 
 
 
 
@@ -121,7 +119,7 @@ def get_acc():
  encoder = encoder.to(device)
  encoder.eval()
  
- logreg = LogisticRegression(output_feature_dim, 40)
+ logreg = LogisticRegression(128, 40)
  logreg = logreg.to(device)
  
  x_train, y_train = get_features_from_encoder(encoder, train_loader)
@@ -187,4 +185,4 @@ def get_acc():
         acc =  correct / total
         print(f"Training accuracy: {np.mean(train_acc)}")
         print(f"Testing accuracy: {np.mean(acc)}")
-
+ return acc

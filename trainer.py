@@ -107,7 +107,6 @@ class BYOLTrainer:
        
         for epoch in range(0,self.max_epochs):
             log_string('Epoch %d (%d/%s):' % (global_epoch + 1, epoch + 1, self.max_epochs))
-
             scheduler.step()
             for batch_id, data in tqdm(enumerate(trainDataLoader, 0), total=len(trainDataLoader), smoothing=0.9):
                points, target = data
@@ -134,8 +133,9 @@ class BYOLTrainer:
                loss.backward()
                self.optimizer.step()
                self._update_target_network_parameters()
-            torch.save(state, savepath)
+            self.save_model(os.path.join('checkpoints', 'model.pth'))
             test_acc.get_acc()
+            
               #  classifier = classifier.train()
               #  pred, trans_feat = classifier(points)
               #  loss = criterion(pred, target.long(), trans_feat)
@@ -240,7 +240,7 @@ class BYOLTrainer:
                 self._update_target_network_parameters()  # update the key encoder
                 niter += 1
             # save checkpoints
-            self.save_model(os.path.join(model_checkpoints_folder, 'model.pth'))
+            self.save_model(os.path.join('checkpoints', 'model.pth'))
             print("End of epoch {}".format(epoch_counter))
 
         
@@ -249,14 +249,12 @@ class BYOLTrainer:
         
     def update(self, batch_view_1, batch_view_2,testDataLoader):
         # compute query feature
-#         online_net=nn.DataParallel(self.online_network,device_ids=[0,1,2,3])
-        online_net=online_net.cuda()
-        online_net=self.online_network.train()
+        # online_net=nn.DataParallel(self.online_network,device_ids=[0,1,2,3])
+        online_net=self.online_network.cuda()
         pred1, trans_feat1=online_net(batch_view_1)
         pred2, trans_feat2=online_net(batch_view_2)
-#         predictor=nn.DataParallel(self.predictor,device_ids=[0,1,2,3])
-        predictor=predictor.cuda()
-        predictor=self.predictor.train()
+        # predictor=nn.DataParallel(self.predictor,device_ids=[0,1,2,3])
+        predictor=self.predictor.cuda()
         predictions_from_view_1 = predictor(pred1)
         predictions_from_view_2 = predictor(pred2)
         # pred_choice = pred1.data.max(1)[1]
@@ -266,9 +264,9 @@ class BYOLTrainer:
         # log_string('Train Instance Accuracy: %f' % train_instance_acc)
         # compute key features
         with torch.no_grad():
-#             target_network=nn.DataParallel(self.target_network,device_ids=[0,1,2,3])
-            target_network=target_network.cuda()
-            target_network=self.target_network.train()
+            # target_network=nn.DataParallel(self.target_network,device_ids=[0,1,2,3])
+            target_network=self.target_network.cuda()
+            # target_network=self.target_network.train()
             targets_to_view_2,trans_feat_target_1 = target_network(batch_view_1)
             targets_to_view_1,trans_feat_target_2 = target_network(batch_view_2)
         
