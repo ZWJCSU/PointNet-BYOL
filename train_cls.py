@@ -122,16 +122,15 @@ def main(args):
     online_network = MODEL.get_model(num_class,normal_channel=args.normal).cuda()
     criterion = MODEL.get_loss().cuda()
 # load pre-trained model if defined
-    load_params = torch.load('checkpoints/model.pth')
-    online_network.load_state_dict(load_params['online_network_state_dict'])
-#     try:
-#         checkpoint = torch.load(str(experiment_dir) + '/checkpoints/best_model.pth')
-#         start_epoch = checkpoint['epoch']
-#         online_network.load_state_dict(checkpoint['model_state_dict'])
-#         log_string('Use pretrain model')
-#     except:
-#         log_string('No existing model, starting training from scratch...')
-#         start_epoch = 0
+
+    try:
+        checkpoint = torch.load('checkpoints/model.pth')
+        start_epoch = checkpoint['epoch']
+        online_network.load_state_dict(checkpoint['model_state_dict'])
+        log_string('Use pretrain model')
+    except:
+        log_string('No existing model, starting training from scratch...')
+        start_epoch = 0
 
 # predictor network
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
