@@ -249,14 +249,14 @@ class BYOLTrainer:
         
     def update(self, batch_view_1, batch_view_2,testDataLoader):
         # compute query feature
-        online_net=nn.DataParallel(self.online_network,device_ids=[0,1,2,3])
+#         online_net=nn.DataParallel(self.online_network,device_ids=[0,1,2,3])
         online_net=online_net.cuda()
-#         online_net=self.online_network.train()
+        online_net=self.online_network.train()
         pred1, trans_feat1=online_net(batch_view_1)
         pred2, trans_feat2=online_net(batch_view_2)
-        predictor=nn.DataParallel(self.predictor,device_ids=[0,1,2,3])
+#         predictor=nn.DataParallel(self.predictor,device_ids=[0,1,2,3])
         predictor=predictor.cuda()
-#         predictor=self.predictor.train()
+        predictor=self.predictor.train()
         predictions_from_view_1 = predictor(pred1)
         predictions_from_view_2 = predictor(pred2)
         # pred_choice = pred1.data.max(1)[1]
@@ -266,9 +266,9 @@ class BYOLTrainer:
         # log_string('Train Instance Accuracy: %f' % train_instance_acc)
         # compute key features
         with torch.no_grad():
-            target_network=nn.DataParallel(self.target_network,device_ids=[0,1,2,3])
+#             target_network=nn.DataParallel(self.target_network,device_ids=[0,1,2,3])
             target_network=target_network.cuda()
-#             target_network=self.target_network.train()
+            target_network=self.target_network.train()
             targets_to_view_2,trans_feat_target_1 = target_network(batch_view_1)
             targets_to_view_1,trans_feat_target_2 = target_network(batch_view_2)
         
