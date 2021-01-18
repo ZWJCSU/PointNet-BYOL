@@ -23,6 +23,13 @@ from torch.utils.data.dataloader import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 from utils import _create_model_training_folder
 
+class LogisticRegression(torch.nn.Module):
+def __init__(self, input_dim, output_dim):
+    super(LogisticRegression, self).__init__()
+    self.linear = torch.nn.Linear(input_dim, output_dim)
+    
+def forward(self, x):
+    return self.linear(x)
 
 class BYOLTrainer:
     def __init__(self, online_network, target_network, predictor, optimizer, device, **params):
