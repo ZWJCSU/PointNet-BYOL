@@ -16,6 +16,9 @@ from torchvision import transforms, datasets
 import torchvision
 import numpy as np
 import os
+import provider
+import importlib
+from tqdm import tqdm
 from sklearn import preprocessing
 from torch.utils.data.dataloader import DataLoader
 from data_utils.ModelNetDataLoader import ModelNetDataLoader
@@ -66,7 +69,7 @@ def get_features_from_encoder(encoder, loader):
            points, target = points.cuda(), target.cuda()
            feature_vector = encoder(points)
            x_train.extend(feature_vector)
-           y_train.extend(target.numpy())
+           y_train.extend(target.cpu().numpy())
     x_train = torch.stack(x_train)
     y_train = torch.tensor(y_train)
 
@@ -132,7 +135,6 @@ def get_acc(trainDataLoader,testDataLoader):
      print("Parameters successfully loaded.")
 
  # remove the projection head
- encoder = torch.nn.Sequential(*list(encoder.children())[:-1])
  encoder = encoder.to(device)
  encoder.eval()
  
