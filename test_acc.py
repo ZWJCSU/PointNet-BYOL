@@ -91,10 +91,10 @@ def get_features_from_encoder(encoder, loader):
 def create_data_loaders_from_arrays(X_train, y_train, X_test, y_test):
 
     train = torch.utils.data.TensorDataset(X_train, y_train)
-    train_loader = torch.utils.data.DataLoader(train, batch_size=16, shuffle=True)
+    train_loader = torch.utils.data.DataLoader(train, batch_size=6, shuffle=True)
 
     test = torch.utils.data.TensorDataset(X_test, y_test)
-    test_loader = torch.utils.data.DataLoader(test, batch_size=16, shuffle=False)
+    test_loader = torch.utils.data.DataLoader(test, batch_size=6, shuffle=False)
     return train_loader, test_loader
 
 
