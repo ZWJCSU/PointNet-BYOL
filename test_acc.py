@@ -54,19 +54,36 @@ def get_features_from_encoder(encoder, loader):
     y_train = []
 
     # get the features from the pre-trained model
-    for i, ((x1,x2),y) in enumerate(loader):
-        # i=i.to(device)
-        # x=x.to(device)
-        # y=y.to(device)
-        x1=torch.tensor([item.cpu().detach().numpy() for item in x1]).cuda() 
-        with torch.no_grad():
-            feature_vector = encoder(x1)
-            x_train.extend(feature_vector)
-            y_train.extend(y.numpy())
-
-            
+    for batch_id, data in tqdm(enumerate(loader, 0), total=len(loader), smoothing=0.9):
+           points, target = data
+           points = points.data.numpy()
+           points = provider.random_point_dropout(points)
+           points[:,:, 0:3] = provider.random_scale_point_cloud(points[:,:, 0:3])
+           points[:,:, 0:3] = provider.shift_point_cloud(points[:,:, 0:3])
+           points = torch.Tensor(points)
+           target = target[:, 0]
+           points = points.transpose(2, 1)
+           points, target = points.cuda(), target.cuda()
+           feature_vector = encoder(points)
+           x_train.extend(feature_vector)
+           y_train.extend(target.numpy())
     x_train = torch.stack(x_train)
     y_train = torch.tensor(y_train)
+
+
+    # for i, (x,y) in enumerate(loader):
+    #     # i=i.to(device)
+    #     # x=x.to(device)
+    #     # y=y.to(device)
+    #     x1=torch.tensor([item.cpu().detach().numpy() for item in x1]).cuda() 
+    #     with torch.no_grad():
+    #         feature_vector = encoder(x1)
+    #         x_train.extend(feature_vector)
+    #         y_train.extend(y.numpy())
+
+            
+    # x_train = torch.stack(x_train)
+    # y_train = torch.tensor(y_train)
     return x_train, y_train
 
 
@@ -125,17 +142,17 @@ def get_acc():
  x_train, y_train = get_features_from_encoder(encoder, train_loader)
  x_test, y_test = get_features_from_encoder(encoder, test_loader)
 
- if len(x_train.shape) > 2:
-     x_train = torch.mean(x_train, dim=[2, 3])
-     x_test = torch.mean(x_test, dim=[2, 3])
+#  if len(x_train.shape) > 2:
+#      x_train = torch.mean(x_train, dim=[2, 3])
+#      x_test = torch.mean(x_test, dim=[2, 3])
      
- print("Training data shape:", x_train.shape, y_train.shape)
- print("Testing data shape:", x_test.shape, y_test.shape)
+#  print("Training data shape:", x_train.shape, y_train.shape)
+#  print("Testing data shape:", x_test.shape, y_test.shape)
  
- scaler = preprocessing.StandardScaler()
- scaler.fit(x_train.cpu())
- x_train = scaler.transform(x_train.cpu()).astype(np.float32)
- x_test = scaler.transform(x_test.cpu()).astype(np.float32)
+#  scaler = preprocessing.StandardScaler()
+#  scaler.fit(x_train.cpu())
+#  x_train = scaler.transform(x_train.cpu()).astype(np.float32)
+#  x_test = scaler.transform(x_test.cpu()).astype(np.float32)
 
  train_loader, test_loader = create_data_loaders_from_arrays(torch.from_numpy(x_train), y_train, torch.from_numpy(x_test), y_test)
 
