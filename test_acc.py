@@ -58,6 +58,7 @@ def get_features_from_encoder(encoder, loader):
 
     # get the features from the pre-trained model
     for batch_id, data in tqdm(enumerate(loader, 0), total=len(loader), smoothing=0.9):
+        with torch.no_grad():
            points, target = data
            points = points.data.numpy()
            points = provider.random_point_dropout(points)
