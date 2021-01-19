@@ -99,23 +99,23 @@ def create_data_loaders_from_arrays(X_train, y_train, X_test, y_test):
 
 
 
-def get_acc():
+def get_acc(trainDataLoader,testDataLoader):
  batch_size = 8
 
  config = yaml.load(open("/content/PointNet-BYOL/config/config.yaml", "r"), Loader=yaml.FullLoader)
 
- TRAIN_DATASET = ModelNetDataLoader(root='data/modelnet40_normal_resampled/', npoint=1024, split='train',
-                                                  normal_channel=False)
- TEST_DATASET = ModelNetDataLoader(root='data/modelnet40_normal_resampled/', npoint=1024, split='test',
-                                                 normal_channel=False)
+#  TRAIN_DATASET = ModelNetDataLoader(root='data/modelnet40_normal_resampled/', npoint=1024, split='train',
+#                                                   normal_channel=False)
+#  TEST_DATASET = ModelNetDataLoader(root='data/modelnet40_normal_resampled/', npoint=1024, split='test',
+#                                                  normal_channel=False)
 
 
- print("Input shape:", len(TRAIN_DATASET))
+#  print("Input shape:", len(TRAIN_DATASET))
 
- train_loader = torch.utils.data.DataLoader(TRAIN_DATASET, batch_size=16, shuffle=True, num_workers=4)
- test_loader = torch.utils.data.DataLoader(TEST_DATASET, batch_size=16, shuffle=False, num_workers=4)
+#  train_loader = torch.utils.data.DataLoader(TRAIN_DATASET, batch_size=16, shuffle=True, num_workers=4)
+#  test_loader = torch.utils.data.DataLoader(TEST_DATASET, batch_size=16, shuffle=False, num_workers=4)
 
- print(type(train_loader))
+#  print(type(train_loader))
 
  device = 'cuda' if torch.cuda.is_available() else 'cpu' #'cuda' if torch.cuda.is_available() else 'cpu'
  encoder = get_model(num_class=40,normal_channel=True)
@@ -139,8 +139,8 @@ def get_acc():
  logreg = LogisticRegression(128, 40)
  logreg = logreg.to(device)
  
- x_train, y_train = get_features_from_encoder(encoder, train_loader)
- x_test, y_test = get_features_from_encoder(encoder, test_loader)
+ x_train, y_train = get_features_from_encoder(encoder, trainDataLoader)
+ x_test, y_test = get_features_from_encoder(encoder, testDataLoader)
 
 #  if len(x_train.shape) > 2:
 #      x_train = torch.mean(x_train, dim=[2, 3])
