@@ -108,7 +108,7 @@ class BYOLTrainer:
         for epoch in range(0,self.max_epochs):
             log_string('Epoch %d (%d/%s):' % (global_epoch + 1, epoch + 1, self.max_epochs))
             scheduler.step()
-            test_acc.get_acc(trainDataLoader,testDataLoader)
+            
             for batch_id, data in tqdm(enumerate(trainDataLoader, 0), total=len(trainDataLoader), smoothing=0.9):
                points, target = data
                points = points.data.numpy()
@@ -129,7 +129,8 @@ class BYOLTrainer:
                target1 = target1[:, 0]
                points1 = points1.transpose(2, 1)
                points1, target1 = points1.cuda(), target1.cuda()
-               loss = self.update(points, points1,testDataLoader)
+               
+               loss = self.update(points,target, points1,testDataLoader)
                self.optimizer.zero_grad()
                loss.backward()
                self.optimizer.step()
@@ -248,12 +249,13 @@ class BYOLTrainer:
 
         
         
-    def update(self, batch_view_1, batch_view_2,testDataLoader):
+    def update(self, batch_view_1,target, batch_view_2,testDataLoader):
         # compute query feature
         # online_net=nn.DataParallel(self.online_network,device_ids=[0,1,2,3])
         online_net=self.online_network.cuda()
         pred1, trans_feat1=online_net(batch_view_1)
         pred2, trans_feat2=online_net(batch_view_2)
+        test_acc.get_acc(pred1,target,trans_feat1)
         # predictor=nn.DataParallel(self.predictor,device_ids=[0,1,2,3])
         predictor=self.predictor.cuda()
         predictions_from_view_1 = predictor(pred1)

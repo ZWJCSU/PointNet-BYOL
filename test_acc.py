@@ -24,6 +24,7 @@ from torch.utils.data.dataloader import DataLoader
 from data_utils.ModelNetDataLoader import ModelNetDataLoader
 from models.resnet_base_network import ResNet18
 from models.pointnet2_cls_msg import get_model
+from models.pointnet2_cls_msg import get_loss
 
 
 
@@ -55,10 +56,10 @@ def get_features_from_encoder(encoder, loader):
     
     x_train = []
     y_train = []
-
+    print(type(loader))
     # get the features from the pre-trained model
     for batch_id, data in tqdm(enumerate(loader, 0), total=len(loader), smoothing=0.9):
-        with torch.no_grad():
+        
            points, target = data
            points = points.data.numpy()
            points = provider.random_point_dropout(points)
@@ -68,11 +69,15 @@ def get_features_from_encoder(encoder, loader):
            target = target[:, 0]
            points = points.transpose(2, 1)
            points, target = points.cuda(), target.cuda()
-           feature_vector = encoder(points)
-           x_train.extend(feature_vector)
-           y_train.extend(target.cpu().numpy())
-    x_train = torch.stack(x_train)
+           with torch.no_grad():
+                feature_vector = encoder(points)
+                # print("feature_vector.size()",len(feature_vector))
+                # print(np.ndim(feature_vector))
+                x_train.extend(feature_vector)
+                y_train.extend(target.cpu().numpy())
+    # x_train = torch.stack(x_train)
     y_train = torch.tensor(y_train)
+    print("success feature")
 
 
     # for i, (x,y) in enumerate(loader):
@@ -103,7 +108,7 @@ def create_data_loaders_from_arrays(X_train, y_train, X_test, y_test):
 
 
 
-def get_acc(trainDataLoader,testDataLoader):
+def get_acc(pred1,target,trans_feat1):
  batch_size = 8
 
  config = yaml.load(open("/content/PointNet-BYOL/config/config.yaml", "r"), Loader=yaml.FullLoader)
@@ -122,28 +127,28 @@ def get_acc(trainDataLoader,testDataLoader):
 #  print(type(train_loader))
 
  device = 'cuda' if torch.cuda.is_available() else 'cpu' #'cuda' if torch.cuda.is_available() else 'cpu'
- encoder = get_model(num_class=40,normal_channel=True)
+#  encoder = get_model(num_class=40,normal_channel=True)
 #  output_feature_dim = encoder.projetion.net[0].in_features# 
 
 
 
  #load pre-trained parameters
- load_params = torch.load(os.path.join('/content/PointNet-BYOL/checkpoints/model.pth'),
-                          map_location=torch.device(torch.device(device)))
+#  load_params = torch.load(os.path.join('/content/PointNet-BYOL/checkpoints/model.pth'),
+#                           map_location=torch.device(torch.device(device)))
 
- if 'online_network_state_dict' in load_params:
-     encoder.load_state_dict(load_params['online_network_state_dict'])
-     print("Parameters successfully loaded.")
+#  if 'online_network_state_dict' in load_params:
+#      encoder.load_state_dict(load_params['online_network_state_dict'])
+#      print("Parameters successfully loaded.")
 
  # remove the projection head
- encoder = encoder.to(device)
- encoder.eval()
+#  encoder = encoder.to(device)
+#  encoder.eval()
  
  logreg = LogisticRegression(128, 40)
  logreg = logreg.to(device)
  
- x_train, y_train = get_features_from_encoder(encoder, trainDataLoader)
- x_test, y_test = get_features_from_encoder(encoder, testDataLoader)
+#  x_train, y_train = get_features_from_encoder(encoder, trainDataLoader)
+#  x_test, y_test = get_features_from_encoder(encoder, testDataLoader)
 
 #  if len(x_train.shape) > 2:
 #      x_train = torch.mean(x_train, dim=[2, 3])
@@ -157,12 +162,12 @@ def get_acc(trainDataLoader,testDataLoader):
 #  x_train = scaler.transform(x_train.cpu()).astype(np.float32)
 #  x_test = scaler.transform(x_test.cpu()).astype(np.float32)
 
- train_loader, test_loader = create_data_loaders_from_arrays(torch.from_numpy(x_train), y_train, torch.from_numpy(x_test), y_test)
-
+#  train_loader, test_loader = create_data_loaders_from_arrays(torch.tensor([item.cpu().detach().numpy() for item in x_train]).cuda() , y_train, torch.from_numpy(x_test), y_test)
  optimizer = torch.optim.Adam(logreg.parameters(), lr=3e-4)
- criterion = torch.nn.CrossEntropyLoss()
- eval_every_n_epochs = 10
-
+ criterion = get_loss()
+ eval_every_n_epochs = 40
+ train = torch.utils.data.TensorDataset(pred1, target)
+ train_loader = torch.utils.data.DataLoader(train, batch_size=6, shuffle=True)
  for epoch in range(200):
 #     train_acc = []
     for x, y in train_loader:
@@ -170,13 +175,11 @@ def get_acc(trainDataLoader,testDataLoader):
         y = y.to(device)
         # zero the parameter gradients
         optimizer.zero_grad()        
-        
+      
         logits = logreg(x)
         predictions = torch.argmax(logits, dim=1)
-        
-        loss = criterion(logits, y)
-    
-        loss.backward()
+        loss = criterion(logits, y.long(),y)
+        loss.backward(retain_graph=True)
         optimizer.step()
     
     
@@ -192,17 +195,17 @@ def get_acc(trainDataLoader,testDataLoader):
             
             train_total += y.size(0)
             train_correct += (predictions == y).sum().item()
-        for x, y in test_loader:
-            x = x.to(device)
-            y = y.to(device)
+        # for x, y in test_loader:
+        #     x = x.to(device)
+        #     y = y.to(device)
 
-            logits = logreg(x)
-            predictions = torch.argmax(logits, dim=1)
+        #     logits = logreg(x)
+        #     predictions = torch.argmax(logits, dim=1)
             
-            total += y.size(0)
-            correct += (predictions == y).sum().item()
+        #     total += y.size(0)
+        #     correct += (predictions == y).sum().item()
         train_acc=  train_correct / train_total 
-        acc =  correct / total
+        # acc =  correct / total
         print(f"Training accuracy: {np.mean(train_acc)}")
-        print(f"Testing accuracy: {np.mean(acc)}")
- return acc
+        # print(f"Testing accuracy: {np.mean(acc)}")
+ return train_acc
