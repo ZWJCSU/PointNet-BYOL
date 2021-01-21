@@ -108,7 +108,6 @@ class BYOLTrainer:
         for epoch in range(0,self.max_epochs):
             log_string('Epoch %d (%d/%s):' % (global_epoch + 1, epoch + 1, self.max_epochs))
             scheduler.step()
-            
             for batch_id, data in tqdm(enumerate(trainDataLoader, 0), total=len(trainDataLoader), smoothing=0.9):
                points, target = data
                points = points.data.numpy()
@@ -119,7 +118,6 @@ class BYOLTrainer:
                target = target[:, 0]
                points = points.transpose(2, 1)
                points, target = points.cuda(), target.cuda()
-            
                points1, target1 = data
                points1 = points1.data.numpy()
                points1 = provider.random_point_dropout(points1)
@@ -129,14 +127,14 @@ class BYOLTrainer:
                target1 = target1[:, 0]
                points1 = points1.transpose(2, 1)
                points1, target1 = points1.cuda(), target1.cuda()
-               
                loss = self.update(points,target, points1,testDataLoader)
                self.optimizer.zero_grad()
                loss.backward()
                self.optimizer.step()
                self._update_target_network_parameters()
-            self.save_model(os.path.join('checkpoints', 'model.pth'))
-            
+               if(epoch%5==0)
+                  test_acc.get_acc()
+            self.save_model(os.path.join('checkpoints', 'model.pth'))  
             
               #  classifier = classifier.train()
               #  pred, trans_feat = classifier(points)
@@ -255,7 +253,6 @@ class BYOLTrainer:
         online_net=self.online_network.cuda()
         pred1, trans_feat1=online_net(batch_view_1)
         pred2, trans_feat2=online_net(batch_view_2)
-        test_acc.get_acc(pred1,target,trans_feat1)
         # predictor=nn.DataParallel(self.predictor,device_ids=[0,1,2,3])
         predictor=self.predictor.cuda()
         predictions_from_view_1 = predictor(pred1)
@@ -272,11 +269,8 @@ class BYOLTrainer:
             # target_network=self.target_network.train()
             targets_to_view_2,trans_feat_target_1 = target_network(batch_view_1)
             targets_to_view_1,trans_feat_target_2 = target_network(batch_view_2)
-        
         loss = self.regression_loss(predictions_from_view_1, targets_to_view_1)
         loss += self.regression_loss(predictions_from_view_2, targets_to_view_2)
-        
-        
         return loss.mean()
 
     def save_model(self, PATH):
