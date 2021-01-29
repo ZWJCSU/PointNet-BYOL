@@ -132,8 +132,8 @@ class BYOLTrainer:
                loss.backward()
                self.optimizer.step()
                self._update_target_network_parameters()
-               if(epoch%5==0):
-                  test_acc.get_acc()
+            if(epoch%5==0):
+               test_acc.get_acc()
             self.save_model(os.path.join('checkpoints', 'model.pth'))  
             
               #  classifier = classifier.train()
