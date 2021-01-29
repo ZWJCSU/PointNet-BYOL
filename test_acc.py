@@ -173,7 +173,7 @@ def get_acc():
         optimizer.zero_grad()        
         logits = logreg(x)
         predictions = torch.argmax(logits, dim=1)
-        loss = criterion(predictions, y.long(),y)
+        loss = criterion(logits, y.long(),y)
         loss.backward(retain_graph=True)
         optimizer.step()
     
