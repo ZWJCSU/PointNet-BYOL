@@ -250,15 +250,13 @@ class BYOLTrainer:
     def update(self, batch_view_1,target, batch_view_2,testDataLoader):
         # compute query feature
         # online_net=nn.DataParallel(self.online_network,device_ids=[0,1,2,3])
-        with torch.no_grad():
-            online_net=self.online_network.cuda()
-            pred1, trans_feat1=online_net(batch_view_1)
-            pred2, trans_feat2=online_net(batch_view_2)
+        online_net=self.online_network.cuda()
+        pred1, trans_feat1=online_net(batch_view_1)
+        pred2, trans_feat2=online_net(batch_view_2)
         # predictor=nn.DataParallel(self.predictor,device_ids=[0,1,2,3])
-        with torch.no_grad():
-            predictor=self.predictor.cuda()
-            predictions_from_view_1 = predictor(pred1)
-            predictions_from_view_2 = predictor(pred2)
+        predictor=self.predictor.cuda()
+        predictions_from_view_1 = predictor(pred1)
+        predictions_from_view_2 = predictor(pred2)
         # pred_choice = pred1.data.max(1)[1]
         # correct = pred_choice.eq(target.long().data).cpu().sum()
         # mean_correct.append(correct.item() / float(points.size()[0]))
