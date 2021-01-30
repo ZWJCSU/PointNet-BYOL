@@ -48,7 +48,8 @@ class LogisticRegression(torch.nn.Module):
         self.linear = torch.nn.Linear(input_dim, output_dim)
         
     def forward(self, x):
-        return self.linear(x)
+        x=self.linear(x)
+        return F.log_softmax(x, -1)
 
 
 
