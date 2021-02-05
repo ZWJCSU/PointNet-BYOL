@@ -25,7 +25,7 @@ from torch.utils.data.dataloader import DataLoader
 from data_utils.ModelNetDataLoader import ModelNetDataLoader
 from models.resnet_base_network import ResNet18
 from models.pointnet2_cls_msg import get_model
-from models.pointnet2_cls_msg import get_loss
+from pointnet2_cls_msg_concat import get_loss
 import pointnet2_cls_msg_concat
 import pointnet2_cls_msg_raw
 
@@ -121,8 +121,8 @@ def get_acc():
 
  print("Input shape:", len(TRAIN_DATASET))
 
- train_loader = torch.utils.data.DataLoader(TRAIN_DATASET, batch_size=8, shuffle=True, num_workers=12)
- test_loader = torch.utils.data.DataLoader(TEST_DATASET, batch_size=8, shuffle=False, num_workers=12)
+ train_loader = torch.utils.data.DataLoader(TRAIN_DATASET, batch_size=16, shuffle=True, num_workers=12)
+ test_loader = torch.utils.data.DataLoader(TEST_DATASET, batch_size=16, shuffle=False, num_workers=12)
  device = 'cuda' if torch.cuda.is_available() else 'cpu' #'cuda' if torch.cuda.is_available() else 'cpu'
  encoder = get_model(num_class=40,normal_channel=True)
 #  output_feature_dim = encoder.projetion.net[0].in_features# 
@@ -161,9 +161,16 @@ def get_acc():
 #  train_loader, test_loader = create_data_loaders_from_arrays(torch.from_numpy(x_train), \
 #  y_train, torch.from_numpy(x_test), y_test)
 
- criterion = get_loss()
+ criterion = pointnet2_cls_msg_concat.get_loss().cuda()
  classifier = pointnet2_cls_msg_concat.get_model(num_class=40,normal_channel=True).cuda()
- optimizer = torch.optim.SGD(classifier.parameters(), lr=0.01, momentum=0.9)
+#  optimizer = torch.optim.SGD(classifier.parameters(), lr=0.01, momentum=0.9)
+ optimizer = torch.optim.Adam(
+            classifier.parameters(),
+            lr=0.001,
+            betas=(0.9, 0.999),
+            eps=1e-08,
+            weight_decay=1e-4
+        )
  eval_every_n_epochs = 1
  scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=20, gamma=0.7)
  best_instance_acc = 0.0
@@ -187,7 +194,6 @@ def get_acc():
            points = points.transpose(2, 1)
            points, target = points.cuda(), target.cuda()
            optimizer.zero_grad()
-
            classifier = classifier.train()
            feature_vector,cls = encoder(points)
            pred,cls = classifier(points,feature_vector)
@@ -249,4 +255,4 @@ def get_acc():
 #         acc =  correct / total
 #         print(f"Training accuracy: {np.mean(train_acc)}")
 #         print(f"Testing accuracy: {np.mean(acc)}")
- return train_acc
+ return train_instance_acc
