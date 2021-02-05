@@ -18,6 +18,7 @@ import numpy as np
 import os
 import provider
 import importlib
+import torch.nn.functional as F
 from tqdm import tqdm
 from sklearn import preprocessing
 from torch.utils.data.dataloader import DataLoader
@@ -48,7 +49,8 @@ class LogisticRegression(torch.nn.Module):
         self.linear = torch.nn.Linear(input_dim, output_dim)
         
     def forward(self, x):
-        return self.linear(x)
+        x=self.linear(x)
+        return F.log_softmax(x, -1)
 
 
 

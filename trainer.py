@@ -108,6 +108,7 @@ class BYOLTrainer:
         for epoch in range(0,self.max_epochs):
             log_string('Epoch %d (%d/%s):' % (global_epoch + 1, epoch + 1, self.max_epochs))
             scheduler.step()
+            test_acc.get_acc()
             for batch_id, data in tqdm(enumerate(trainDataLoader, 0), total=len(trainDataLoader), smoothing=0.9):
                points, target = data
                points = points.data.numpy()
@@ -132,8 +133,6 @@ class BYOLTrainer:
                loss.backward()
                self.optimizer.step()
                self._update_target_network_parameters()
-               if(epoch%5==0):
-                  test_acc.get_acc()
             self.save_model(os.path.join('checkpoints', 'model.pth'))  
             
               #  classifier = classifier.train()
