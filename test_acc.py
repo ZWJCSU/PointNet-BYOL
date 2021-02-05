@@ -75,14 +75,9 @@ def get_features_from_encoder(encoder, loader):
            with torch.no_grad():
                 raw_feature,raw_cls = raw_model(points)
                 feature_vector,cls = encoder(points)
-                # print("feature_vector.size()",len(feature_vector))
-                # print(np.ndim(feature_vector))
-                print("feature_vector.shape",feature_vector.shape)
-                print("raw_feature.shape",raw_feature.shape)
-                feature_vector=torch.tensor(feature_vector)
+                feature_vector = torch.cat((raw_feature,feature_vector),1)
                 #这里要用extend,append会把[12*128]一块放进去
                 x_train.extend(feature_vector.cpu().numpy())
-                x_train.extend(raw_feature.cpu().numpy())
                 y_train.extend(target.cpu().numpy())
     x_train = np.array(x_train)
     y_train = torch.tensor(y_train)
@@ -105,10 +100,10 @@ def get_features_from_encoder(encoder, loader):
 def create_data_loaders_from_arrays(X_train, y_train, X_test, y_test):
 
     train = torch.utils.data.TensorDataset(X_train, y_train)
-    train_loader = torch.utils.data.DataLoader(train, batch_size=16, shuffle=True)
+    train_loader = torch.utils.data.DataLoader(train, batch_size=8, shuffle=True)
 
     test = torch.utils.data.TensorDataset(X_test, y_test)
-    test_loader = torch.utils.data.DataLoader(test, batch_size=16, shuffle=True)
+    test_loader = torch.utils.data.DataLoader(test, batch_size=8, shuffle=True)
     return train_loader, test_loader
 
 
@@ -126,8 +121,8 @@ def get_acc():
 
  print("Input shape:", len(TRAIN_DATASET))
 
- train_loader = torch.utils.data.DataLoader(TRAIN_DATASET, batch_size=96, shuffle=True, num_workers=12)
- test_loader = torch.utils.data.DataLoader(TEST_DATASET, batch_size=96, shuffle=False, num_workers=12)
+ train_loader = torch.utils.data.DataLoader(TRAIN_DATASET, batch_size=8, shuffle=True, num_workers=12)
+ test_loader = torch.utils.data.DataLoader(TEST_DATASET, batch_size=8, shuffle=False, num_workers=12)
  device = 'cuda' if torch.cuda.is_available() else 'cpu' #'cuda' if torch.cuda.is_available() else 'cpu'
  encoder = get_model(num_class=40,normal_channel=True)
 #  output_feature_dim = encoder.projetion.net[0].in_features# 
@@ -146,11 +141,8 @@ def get_acc():
  encoder = encoder.to(device)
  encoder.eval()
  
- logreg = LogisticRegression(128, 40)
- logreg = logreg.to(device)
- 
- x_train, y_train = get_features_from_encoder(encoder, train_loader)
- x_test, y_test = get_features_from_encoder(encoder, test_loader)
+#  x_train, y_train = get_features_from_encoder(encoder, train_loader)
+#  x_test, y_test = get_features_from_encoder(encoder, test_loader)
 
  
 #  x_train = torch.mean(x_train, dim=[2, 3])
@@ -166,54 +158,95 @@ def get_acc():
 
 #  train_loader, test_loader = create_data_loaders_from_arrays(torch.tensor([item.cpu().detach().numpy() for item in x_train]).cuda(), \
 #  y_train, torch.from_numpy(x_test), y_test)
- train_loader, test_loader = create_data_loaders_from_arrays(torch.from_numpy(x_train), \
- y_train, torch.from_numpy(x_test), y_test)
- optimizer = torch.optim.Adam(logreg.parameters(), lr=3e-4)
+#  train_loader, test_loader = create_data_loaders_from_arrays(torch.from_numpy(x_train), \
+#  y_train, torch.from_numpy(x_test), y_test)
+
  criterion = get_loss()
  classifier = pointnet2_cls_msg_concat.get_model(num_class=40,normal_channel=True).cuda()
- eval_every_n_epochs = 40
+ optimizer = torch.optim.SGD(classifier.parameters(), lr=0.01, momentum=0.9)
+ eval_every_n_epochs = 1
+ scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=20, gamma=0.7)
+ best_instance_acc = 0.0
+ best_class_acc = 0.0
+ mean_correct = []
+
+
+ for epoch in range(10):
+       print('Epoch %d ' % ( epoch + 1))
+
+       scheduler.step()
+       for batch_id, data in tqdm(enumerate(train_loader, 0), total=len(train_loader), smoothing=0.9):
+           points, target = data
+           points = points.data.numpy()
+           points = provider.random_point_dropout(points)
+           points[:,:, 0:3] = provider.random_scale_point_cloud(points[:,:, 0:3])
+           points[:,:, 0:3] = provider.shift_point_cloud(points[:,:, 0:3])
+           points = torch.Tensor(points)
+           target = target[:, 0]
+
+           points = points.transpose(2, 1)
+           points, target = points.cuda(), target.cuda()
+           optimizer.zero_grad()
+
+           classifier = classifier.train()
+           feature_vector,cls = encoder(points)
+           pred,cls = classifier(points,feature_vector)
+           loss = criterion(pred, target.long(), target)
+           pred_choice = pred.data.max(1)[1]
+           correct = pred_choice.eq(target.long().data).cpu().sum()
+           mean_correct.append(correct.item() / float(points.size()[0]))
+           loss.backward()
+           optimizer.step()
+       train_instance_acc = np.mean(mean_correct)
+       print('Train Instance Accuracy: %f' % train_instance_acc)
+
+
+       
+ print('End of training...')  
+
+
+ 
 #  train = torch.utils.data.TensorDataset(pred1, target)
 #  train_loader = torch.utils.data.DataLoader(train, batch_size=96, shuffle=True)
- for epoch in range(200):
-    train_acc = []
-    for x, y in train_loader:
-        x = x.to(device)
-        y = y.to(device)
-        # zero the parameter gradients
-        optimizer.zero_grad()    
-        classifier = classifier.train()
-        pred, trans_feat = classifier(x)    
-        predictions = torch.argmax(pred, dim=1)
-        loss = criterion(pred, y.long(),y)
-        loss.backward(retain_graph=True)
-        optimizer.step()
+#  for epoch in range(10):
+#     train_acc = []
+#     for x, y in train_loader:
+#         x = x.to(device)
+#         y = y.to(device)
+#         # zero the parameter gradients
+#         optimizer.zero_grad()    
+#         classifier = classifier.train()
+#         pred = classifier(x)    
+#         predictions = torch.argmax(pred, dim=1)
+#         loss = criterion(pred, y.long(),y)
+#         loss.backward(retain_graph=True)
+#         optimizer.step()
     
     
-    if epoch % eval_every_n_epochs == 0:
-        train_total,total = 0,0
-        train_correct,correct = 0,0
-        for x, y in train_loader:
-            x = x.to(device)
-            y = y.to(device)
-
-            classifier = classifier.train()
-            pred, trans_feat = classifier(x) 
-            predictions = torch.argmax(pred, dim=1)
+#     if epoch % eval_every_n_epochs == 0:
+#         train_total,total = 0,0
+#         train_correct,correct = 0,0
+#         for x, y in train_loader:
+#             x = x.to(device)
+#             y = y.to(device)
+#             classifier = classifier.train()
+#             pred = classifier(x) 
+#             predictions = torch.argmax(pred, dim=1)
             
-            train_total += y.size(0)
-            train_correct += (predictions == y).sum().item()
-        for x, y in test_loader:
-            x = x.to(device)
-            y = y.to(device)
+#             train_total += y.size(0)
+#             train_correct += (predictions == y).sum().item()
+#         for x, y in test_loader:
+#             x = x.to(device)
+#             y = y.to(device)
             
-            classifier = classifier.train()
-            pred, trans_feat = classifier(x) 
-            predictions = torch.argmax(pred, dim=1)
+#             classifier = classifier.train()
+#             pred = classifier(x) 
+#             predictions = torch.argmax(pred, dim=1)
             
-            total += y.size(0)
-            correct += (predictions == y).sum().item()
-        train_acc=  train_correct / train_total 
-        acc =  correct / total
-        print(f"Training accuracy: {np.mean(train_acc)}")
-        print(f"Testing accuracy: {np.mean(acc)}")
+#             total += y.size(0)
+#             correct += (predictions == y).sum().item()
+#         train_acc=  train_correct / train_total 
+#         acc =  correct / total
+#         print(f"Training accuracy: {np.mean(train_acc)}")
+#         print(f"Testing accuracy: {np.mean(acc)}")
  return train_acc
