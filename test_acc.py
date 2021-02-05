@@ -26,6 +26,8 @@ from data_utils.ModelNetDataLoader import ModelNetDataLoader
 from models.resnet_base_network import ResNet18
 from models.pointnet2_cls_msg import get_model
 from models.pointnet2_cls_msg import get_loss
+import pointnet2_cls_msg_concat
+import pointnet2_cls_msg_raw
 
 
 
@@ -55,7 +57,7 @@ class LogisticRegression(torch.nn.Module):
 
 
 def get_features_from_encoder(encoder, loader):
-    
+    raw_model = pointnet2_cls_msg_raw.get_model(num_class=40,normal_channel=True).cuda()
     x_train = []
     y_train = []
     print(type(loader))
@@ -71,13 +73,18 @@ def get_features_from_encoder(encoder, loader):
            points = points.transpose(2, 1)
            points, target = points.cuda(), target.cuda()
            with torch.no_grad():
+                raw_feature,raw_cls = raw_model(points)
                 feature_vector,cls = encoder(points)
                 # print("feature_vector.size()",len(feature_vector))
                 # print(np.ndim(feature_vector))
+                print("feature_vector.shape",feature_vector.shape)
+                print("raw_feature.shape",raw_feature.shape)
                 feature_vector=torch.tensor(feature_vector)
                 #这里要用extend,append会把[12*128]一块放进去
                 x_train.extend(feature_vector.cpu().numpy())
+                x_train.extend(raw_feature.cpu().numpy())
                 y_train.extend(target.cpu().numpy())
+    x_train = np.array(x_train)
     y_train = torch.tensor(y_train)
     print("success feature")
 
@@ -98,10 +105,10 @@ def get_features_from_encoder(encoder, loader):
 def create_data_loaders_from_arrays(X_train, y_train, X_test, y_test):
 
     train = torch.utils.data.TensorDataset(X_train, y_train)
-    train_loader = torch.utils.data.DataLoader(train, batch_size=24, shuffle=True)
+    train_loader = torch.utils.data.DataLoader(train, batch_size=16, shuffle=True)
 
     test = torch.utils.data.TensorDataset(X_test, y_test)
-    test_loader = torch.utils.data.DataLoader(test, batch_size=24, shuffle=True)
+    test_loader = torch.utils.data.DataLoader(test, batch_size=16, shuffle=True)
     return train_loader, test_loader
 
 
@@ -151,11 +158,11 @@ def get_acc():
      
 #  print("Training data shape:", x_train.shape, y_train.shape)
 #  print("Testing data shape:", x_test.shape, y_test.shape)
- x_train=np.array(x_train)
- scaler = preprocessing.StandardScaler()
- scaler.fit(x_train)
- x_train = scaler.transform(x_train).astype(np.float32)
- x_test = scaler.transform(x_test).astype(np.float32)
+#  x_train=np.array(x_train)
+#  scaler = preprocessing.StandardScaler()
+#  scaler.fit(x_train)
+#  x_train = scaler.transform(x_train).astype(np.float32)
+#  x_test = scaler.transform(x_test).astype(np.float32)
 
 #  train_loader, test_loader = create_data_loaders_from_arrays(torch.tensor([item.cpu().detach().numpy() for item in x_train]).cuda(), \
 #  y_train, torch.from_numpy(x_test), y_test)
@@ -163,6 +170,7 @@ def get_acc():
  y_train, torch.from_numpy(x_test), y_test)
  optimizer = torch.optim.Adam(logreg.parameters(), lr=3e-4)
  criterion = get_loss()
+ classifier = pointnet2_cls_msg_concat.get_model(num_class=40,normal_channel=True).cuda()
  eval_every_n_epochs = 40
 #  train = torch.utils.data.TensorDataset(pred1, target)
 #  train_loader = torch.utils.data.DataLoader(train, batch_size=96, shuffle=True)
@@ -172,10 +180,11 @@ def get_acc():
         x = x.to(device)
         y = y.to(device)
         # zero the parameter gradients
-        optimizer.zero_grad()        
-        logits = logreg(x)
-        predictions = torch.argmax(logits, dim=1)
-        loss = criterion(logits, y.long(),y)
+        optimizer.zero_grad()    
+        classifier = classifier.train()
+        pred, trans_feat = classifier(x)    
+        predictions = torch.argmax(pred, dim=1)
+        loss = criterion(pred, y.long(),y)
         loss.backward(retain_graph=True)
         optimizer.step()
     
@@ -187,17 +196,19 @@ def get_acc():
             x = x.to(device)
             y = y.to(device)
 
-            logits = logreg(x)
-            predictions = torch.argmax(logits, dim=1)
+            classifier = classifier.train()
+            pred, trans_feat = classifier(x) 
+            predictions = torch.argmax(pred, dim=1)
             
             train_total += y.size(0)
             train_correct += (predictions == y).sum().item()
         for x, y in test_loader:
             x = x.to(device)
             y = y.to(device)
-
-            logits = logreg(x)
-            predictions = torch.argmax(logits, dim=1)
+            
+            classifier = classifier.train()
+            pred, trans_feat = classifier(x) 
+            predictions = torch.argmax(pred, dim=1)
             
             total += y.size(0)
             correct += (predictions == y).sum().item()
