@@ -27,7 +27,6 @@ from models.resnet_base_network import ResNet18
 from models.pointnet2_cls_msg import get_model
 from pointnet2_cls_msg_concat import get_loss
 import pointnet2_cls_msg_concat
-import pointnet2_cls_msg_raw
 
 
 
@@ -54,6 +53,28 @@ class LogisticRegression(torch.nn.Module):
         x=self.linear(x)
         return F.log_softmax(x, -1)
 
+def test(model,encoder,loader, num_class=40):
+    mean_correct = []
+    class_acc = np.zeros((num_class,3))
+    for j, data in tqdm(enumerate(loader), total=len(loader)):
+        points, target = data
+        target = target[:, 0]
+        points = points.transpose(2, 1)
+        points, target = points.cuda(), target.cuda()
+        classifier = model.eval()
+        feature_vector, _ = encoder(points)
+        pred, _ = classifier(points,feature_vector)
+        pred_choice = pred.data.max(1)[1]
+        for cat in np.unique(target.cpu()):
+            classacc = pred_choice[target==cat].eq(target[target==cat].long().data).cpu().sum()
+            class_acc[cat,0]+= classacc.item()/float(points[target==cat].size()[0])
+            class_acc[cat,1]+=1
+        correct = pred_choice.eq(target.long().data).cpu().sum()
+        mean_correct.append(correct.item()/float(points.size()[0]))
+    class_acc[:,2] =  class_acc[:,0]/ class_acc[:,1]
+    class_acc = np.mean(class_acc[:,2])
+    instance_acc = np.mean(mean_correct)
+    return instance_acc, class_acc
 
 
 def get_features_from_encoder(encoder, loader):
@@ -176,9 +197,16 @@ def get_acc():
  best_instance_acc = 0.0
  best_class_acc = 0.0
  mean_correct = []
+ try:
+        checkpoint = torch.load('/content/PointNet-BYOL/checkpoints/best_model.pth')
+        classifier.load_state_dict(checkpoint['model_state_dict'])
+        optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+        print('Use pretrain model')
+ except:
+        print('No existing model, starting training from scratch...')
+       
 
-
- for epoch in range(10):
+ for epoch in range(20):
        print('Epoch %d ' % ( epoch + 1))
 
        scheduler.step()
@@ -190,7 +218,6 @@ def get_acc():
            points[:,:, 0:3] = provider.shift_point_cloud(points[:,:, 0:3])
            points = torch.Tensor(points)
            target = target[:, 0]
-
            points = points.transpose(2, 1)
            points, target = points.cuda(), target.cuda()
            optimizer.zero_grad()
@@ -205,6 +232,30 @@ def get_acc():
            optimizer.step()
        train_instance_acc = np.mean(mean_correct)
        print('Train Instance Accuracy: %f' % train_instance_acc)
+       with torch.no_grad():
+           instance_acc, class_acc = test(classifier.eval(), encoder.eval(),test_loader)
+
+           if (instance_acc >= best_instance_acc):
+               best_instance_acc = instance_acc
+               best_epoch = epoch + 1
+
+           if (class_acc >= best_class_acc):
+               best_class_acc = class_acc
+           print('Test Instance Accuracy: %f, Class Accuracy: %f'% (instance_acc, class_acc))
+           print('Best Instance Accuracy: %f, Class Accuracy: %f'% (best_instance_acc, best_class_acc))
+
+           if (instance_acc >= best_instance_acc):
+               print('Save model...')
+               savepath = 'checkpoints' + '/best_model.pth'
+               print('Saving at %s'% savepath)
+               state = {
+                   'epoch': best_epoch,
+                   'instance_acc': instance_acc,
+                   'class_acc': class_acc,
+                   'model_state_dict': classifier.state_dict(),
+                   'optimizer_state_dict': optimizer.state_dict(),
+               }
+               torch.save(state, savepath)
 
 
        
