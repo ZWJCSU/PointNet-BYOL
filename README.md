@@ -1,7 +1,8 @@
 # PyTorch-BYOL
 ### PyTorch implementation of [Bootstrap Your Own Latent: A New Approach to Self-Supervised Learning](https://arxiv.org/abs/2006.07733).
-
+![descriptor](img/descriptor.png)
 ![Image of Yaktocat](./assets/arch.png)
+
 
 
 ## The code I replace
@@ -54,7 +55,9 @@ optimizer:
 
 We measure the quality of the learned representations by linear separability.
 
-During training, BYOL learns features using the STL10 ```train+unsupervised``` set and evaluates in the held-out ```test``` set.
+![descriptor](img/result.png)
+
+During training, BYOL learns features using the ModelNet40``train+unsupervised``` set and evaluates in the held-out ```test``` set.
 
 |       Linear Classifier      | Feature  Extractor | Architecture | Feature dim | Projection Head  dim | Epochs | Batch  Size | Classification-accuracy |
 |:----------------------------:|:------------------:|:------------:|:-----------:|:--------------------:|:------:|:-----------:|:-----------:|
